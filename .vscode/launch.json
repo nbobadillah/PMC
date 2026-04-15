@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "PMC Backend",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "mvn spring-boot:run",
+      "cwd": "${workspaceFolder}/backend"
+    },
+    {
+      "name": "PMC Frontend",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/frontend"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "PMC Full Stack",
+      "configurations": [
+        "PMC Backend",
+        "PMC Frontend"
+      ]
+    }
+  ]
+}
