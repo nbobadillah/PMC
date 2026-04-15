@@ -5,7 +5,7 @@
       "name": "PMC Backend",
       "type": "node-terminal",
       "request": "launch",
-      "command": "mvn spring-boot:run",
+      "command": ".\\mvnw.cmd spring-boot:run",
       "cwd": "${workspaceFolder}/backend"
     },
     {

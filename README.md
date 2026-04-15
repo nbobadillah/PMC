@@ -43,21 +43,71 @@ Prototipo PMC 2/
 `app.py` se conserva solo como referencia del prototipo inicial. No debe ejecutarse para la version actual.
 La nueva aplicacion se ejecuta desde `backend` y `frontend`.
 
-## Ejecutar en VS Code
+## Entrar al proyecto desde Visual Studio Code
 
-Abre la carpeta raiz `Prototipo PMC 2` en VS Code.
+Abre en VS Code la carpeta raiz `PMC`.
+
+### Requisitos
+
+- Java 21 o superior
+- Node.js 20 o superior
+- Extension `Extension Pack for Java` recomendada en VS Code
+
+### Primera vez
+
+1. Abre una terminal en VS Code en la raiz del proyecto.
+2. Entra al frontend:
+
+```bash
+cd frontend
+npm install
+```
+
+3. Vuelve a la raiz del proyecto si quieres usar `Run and Debug` o `Run Task`.
+
+El backend no requiere tener Maven instalado globalmente. El proyecto ya incluye `Maven Wrapper` dentro de `backend/`.
+
+### Ejecutar desde Run and Debug
 
 - `Run and Debug` -> `PMC Backend` para iniciar el backend
 - `Run and Debug` -> `PMC Frontend` para iniciar el frontend
 - `Run and Debug` -> `PMC Full Stack` para iniciar ambos
 
-Tambien puedes usar `Terminal` -> `Run Task` y escoger las tareas `backend: spring-boot:run` o `frontend: npm run dev`.
+### Ejecutar desde Terminal
+
+Backend:
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+En Windows PowerShell tambien funciona:
+
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run dev
+```
+
+### Ejecutar desde Run Task
+
+En VS Code tambien puedes usar `Terminal` -> `Run Task` y escoger:
+
+- `backend: spring-boot:run`
+- `frontend: npm run dev`
 
 ## Ejecutar backend
 
 ```bash
 cd backend
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 Backend disponible en `http://localhost:8081`.
