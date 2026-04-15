@@ -36,12 +36,10 @@ El backend centraliza la logica de negocio y el frontend entrega una experiencia
 Prototipo PMC 2/
 ├── backend/
 ├── frontend/
-├── app.py
 └── README.md
 ```
 
-`app.py` se conserva solo como referencia del prototipo inicial. No debe ejecutarse para la version actual.
-La nueva aplicacion se ejecuta desde `backend` y `frontend`.
+La aplicacion se ejecuta desde `backend` y `frontend`.
 
 ## Entrar al proyecto desde Visual Studio Code
 
