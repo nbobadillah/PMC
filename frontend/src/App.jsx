@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import pricePilotLogo from "./assets/logo_PP.png";
+import pricePilotLogo from "./assets/price-pilot-logo-transparent.png";
 
 const API_BASE = "/api";
 const SESSION_KEY = "price-pilot-session";
@@ -8,19 +8,19 @@ const HISTORY_KEY = "price-pilot-history";
 const portalConfig = {
   FREELANCER: {
     label: "Freelancer / Independiente",
-    eyebrow: "Portal independiente",
-    title: "Define cuanto cobrar sin regalar tu trabajo",
+    eyebrow: "Portal profesional independiente",
+    title: "Establece una referencia comercial clara",
     description:
-      "Calcula tarifa por hora, anticipo, paquetes y piso sostenible para vender mejor tus servicios.",
+      "Centraliza tarifa por hora, anticipo, paquetes y piso sostenible para presentar propuestas con mejor criterio.",
     accentClass: "portal-freelancer",
     demoEmail: "freelancer@pricepilot.app"
   },
   EMPRESA: {
     label: "Empresa",
-    eyebrow: "Portal empresa",
-    title: "Estima cuanto pagar y cuanto cuesta contratar bien",
+    eyebrow: "Portal corporativo",
+    title: "Consolida presupuesto y costo de contratacion",
     description:
-      "Obtén referencia de sueldo mensual, costo empresa y presupuesto por proyecto para perfiles externos o internos.",
+      "Consolida referencia salarial, costo empresa y escenarios de contratacion en un solo workspace de consulta.",
     accentClass: "portal-company",
     demoEmail: "empresa@pricepilot.app"
   }
@@ -91,8 +91,6 @@ export default function App() {
   const [form, setForm] = useState(formTemplates.FREELANCER);
   const [result, setResult] = useState(null);
   const [savedScenarios, setSavedScenarios] = useState([]);
-  const [displayCurrency, setDisplayCurrency] = useState("USD");
-  const [exchangeRate, setExchangeRate] = useState(4000);
   const [currentView, setCurrentView] = useState("home");
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
@@ -230,14 +228,6 @@ export default function App() {
     }));
   }
 
-  function handleCurrencyChange(event) {
-    setDisplayCurrency(event.target.value);
-  }
-
-  function handleExchangeRateChange(event) {
-    setExchangeRate(Number(event.target.value));
-  }
-
   function handlePortalSwitch(nextPortal) {
     if (session) {
       return;
@@ -302,7 +292,7 @@ export default function App() {
       return;
     }
 
-    const summary = buildShareSummary(session.role, form, result, displayCurrency, exchangeRate);
+    const summary = buildShareSummary(session.role, form, result);
     try {
       await navigator.clipboard.writeText(summary);
       setCopyStatus("Resumen copiado");
@@ -344,17 +334,187 @@ export default function App() {
   };
 
   const isCompany = session.role === "EMPRESA";
-  const convertedPreviewFloor = convertAmount(preview.monthlyFloor, displayCurrency, exchangeRate);
+  const convertedPreviewFloor = preview.monthlyFloor;
+  const sessionInitials = buildInitials(session.name);
+  const viewContent = isCompany
+    ? {
+        home: {
+          kicker: "Workspace overview",
+          title: "Planea antes de contratar",
+          description:
+            "Centraliza el contexto del perfil, revisa referencias de costo y guarda escenarios comparables."
+        },
+        workspace: {
+          kicker: "Cotizador activo",
+          title: "Configura el escenario y valida el presupuesto",
+          description:
+            "Ajusta servicio, senioridad, mercado y riesgo mientras ves una referencia clara de pago."
+        },
+        history: {
+          kicker: "Historial guardado",
+          title: "Recupera simulaciones y compara decisiones",
+          description:
+            "Carga escenarios anteriores para revisar supuestos, montos y margen de seguridad."
+        }
+      }
+    : {
+        home: {
+          kicker: "Workspace overview",
+          title: "Ordena tu proceso de cotizacion",
+          description:
+            "Prepara propuestas con mejor criterio comercial y manten a mano tus escenarios guardados."
+        },
+        workspace: {
+          kicker: "Cotizador activo",
+          title: "Define tarifa, margen y alcance en un solo flujo",
+          description:
+            "Ajusta el escenario comercial sin perder de vista el piso sostenible y el presupuesto final."
+        },
+        history: {
+          kicker: "Historial guardado",
+          title: "Compara propuestas y recupera escenarios",
+          description:
+            "Vuelve a simulaciones anteriores para comparar servicio, senioridad y presupuesto."
+        }
+      };
+  const currentViewCopy = viewContent[currentView];
+  const heroContent = isCompany
+    ? {
+        home: {
+          tag: "Company overview",
+          title: "Organiza presupuesto, contexto y decisiones",
+          description:
+            "Mantén una vista clara del perfil, tu rango esperado y los escenarios guardados antes de contratar."
+        },
+        workspace: {
+          tag: "Company mode",
+          title: "Cuanto pagar por proyecto o por mes",
+          description:
+            "Estima pago por hora, sueldo mensual y costo real de contratacion con una base mas ordenada."
+        },
+        history: {
+          tag: "Company history",
+          title: "Consulta escenarios y recupera referencias",
+          description:
+            "Revisa simulaciones guardadas para comparar presupuesto, mercado y supuestos de contratacion."
+        }
+      }
+    : {
+        home: {
+          tag: "Freelancer overview",
+          title: "Ordena tu referencia comercial desde el inicio",
+          description:
+            "Consulta tu base operativa, revisa el piso visible y entra al cotizador con un contexto mas claro."
+        },
+        workspace: {
+          tag: "Freelancer mode",
+          title: "Cuanto cobrar por proyecto o por mes",
+          description:
+            "Calcula tarifa por hora, anticipo, paquetes y piso sostenible para vender mejor tus servicios."
+        },
+        history: {
+          tag: "Freelancer history",
+          title: "Recupera propuestas y compara escenarios",
+          description:
+            "Vuelve a cotizaciones guardadas para revisar servicio, senioridad y presupuesto recomendado."
+        }
+      };
+  const currentHero = heroContent[currentView];
+  const heroHighlights =
+    currentView === "workspace"
+      ? [
+          {
+            label: "Meta mensual",
+            value: displayAmount(form.monthlyIncomeGoal),
+            note: "Base operativa"
+          },
+          {
+            label: "Horas mensuales",
+            value: `${form.monthlyBillableHours} h`,
+            note: "Capacidad declarada"
+          },
+          {
+            label: "Contingencia",
+            value: `${form.contingencyPercent}%`,
+            note: "Margen de seguridad"
+          }
+        ]
+      : currentView === "history"
+        ? [
+            {
+              label: "Escenarios",
+              value: `${savedScenarios.length}`,
+              note: "Guardados"
+            },
+            {
+              label: "Servicio base",
+              value: labelForOption(options.service, form.service),
+              note: "Ultima configuracion"
+            },
+            {
+              label: "Mercado",
+              value: form.market === "INTERNACIONAL" ? "Internacional" : "Local",
+              note: "Contexto actual"
+            }
+          ]
+        : [
+            {
+              label: "Piso visible",
+              value: formatCurrency(convertedPreviewFloor),
+              note: "Referencia rapida"
+            },
+            {
+              label: "Moneda",
+              value: "USD",
+              note: "Base actual"
+            },
+            {
+              label: "Urgencia",
+              value: preview.urgencyLabel,
+              note: isCompany ? "Lectura de contratacion" : "Lectura comercial"
+            }
+          ];
+  const heroClassName = `hero-banner ${currentView === "workspace" ? "hero-banner-detailed" : "hero-banner-compact"}`;
 
   return (
     <div className={`app-shell ${currentPortal.accentClass}`}>
       <main className="workspace">
-        <section className="app-toolbar">
-          <div className="toolbar-left">
-            <div className="brand-block top">
-              <img className="brand-logo" src={pricePilotLogo} alt="Price Pilot" />
+        <section className="top-chrome">
+          <header className="top-header">
+            <div className="top-header-brand">
+              <div className="top-header-logo">
+                <img className="brand-logo" src={pricePilotLogo} alt="Price Pilot" />
+              </div>
             </div>
-            <nav className="side-nav top-nav">
+
+            <div className="top-header-copy">
+              <p className="page-kicker">{currentViewCopy.kicker}</p>
+              <h2>{currentViewCopy.title}</h2>
+              <p>{currentViewCopy.description}</p>
+            </div>
+
+            <div className="top-header-tools">
+              <div className="header-currency-badge">
+                <span className="mini-label">Moneda base</span>
+                <strong>USD</strong>
+              </div>
+
+              <div className="session-badge">
+                <span className="session-avatar">{sessionInitials}</span>
+                <div>
+                  <strong>{session.name}</strong>
+                  <p>{session.dashboardSubtitle}</p>
+                </div>
+              </div>
+
+              <button className="logout-button top" type="button" onClick={handleLogout}>
+                Cerrar sesion
+              </button>
+            </div>
+          </header>
+
+          <nav className="system-nav">
+            <div className="system-nav-links">
               <button
                 className={`nav-item ${currentView === "home" ? "active" : ""}`}
                 type="button"
@@ -376,94 +536,71 @@ export default function App() {
               >
                 Historial
               </button>
-            </nav>
-          </div>
+            </div>
 
-          <div className="toolbar-right">
-            <section className="toolbar-card emphasis">
+            <div className="system-nav-meta">
+              <div className="system-chip">
+                <span className="chip-dot" />
+                {currentPortal.label}
+              </div>
+              <div className="system-chip muted">
+                {isCompany ? "Espacio de contratacion" : "Espacio de propuestas"}
+              </div>
+            </div>
+          </nav>
+
+          <section className="status-ribbon">
+            <article className="status-card emphasis">
               <span className="mini-label">Sesion activa</span>
               <strong>{session.name}</strong>
-              <p>{session.dashboardSubtitle}</p>
-            </section>
-
-            <section className="toolbar-card">
-              <span className="mini-label">Perfil</span>
-              <strong>{currentPortal.label}</strong>
               <p>{session.email}</p>
-            </section>
+            </article>
 
-            <section className="toolbar-card compact">
+            <article className="status-card">
               <span className="mini-label">Captura</span>
               <strong>{completion}%</strong>
               <div className="progress-track">
                 <div className="progress-bar" style={{ width: `${completion}%` }} />
               </div>
-            </section>
+            </article>
 
-            <section className="toolbar-card compact">
+            <article className="status-card">
               <span className="mini-label">Preview</span>
-              <p>Piso: {formatCurrency(convertedPreviewFloor, displayCurrency)}</p>
-              <p>Urgencia: {preview.urgencyLabel}</p>
-            </section>
-          </div>
+              <strong>{formatCurrency(convertedPreviewFloor)}</strong>
+              <p>Piso mensual visible</p>
+            </article>
 
-          <div className="toolbar-actions">
-            <button className="logout-button top" type="button" onClick={handleLogout}>
-              Cerrar sesion
-            </button>
-          </div>
+            <article className="status-card">
+              <span className="mini-label">Contexto</span>
+              <strong>{preview.urgencyLabel}</strong>
+              <p>{form.market === "INTERNACIONAL" ? "Mercado internacional" : "Mercado local"}</p>
+            </article>
+          </section>
         </section>
 
-        <header className="topbar">
-          <div>
-            <p className="page-kicker">{isCompany ? "Company Planning" : "Independent Pricing"}</p>
-            <h2>{currentPortal.title}</h2>
-          </div>
-          <div className="topbar-meta">
-            <label className="currency-control">
-              <span>Moneda</span>
-              <select value={displayCurrency} onChange={handleCurrencyChange}>
-                <option value="USD">USD</option>
-                <option value="COP">COP</option>
-              </select>
-            </label>
-            {displayCurrency === "COP" ? (
-              <label className="currency-control rate">
-                <span>Tasa USD/COP</span>
-                <input type="number" min="1" value={exchangeRate} onChange={handleExchangeRateChange} />
-              </label>
-            ) : null}
-            <div className="topbar-chip">
-              <span className="chip-dot" />
-              {currentPortal.label}
-            </div>
-            <div className="topbar-chip muted">
-              {isCompany ? "Hiring Workspace" : "Proposal Workspace"}
-            </div>
-          </div>
-        </header>
-
-        <section className="hero-banner">
+        <section className={heroClassName}>
           <div className="hero-copy">
-            <span className="section-tag">{isCompany ? "Company Mode" : "Freelancer Mode"}</span>
-            <h3>{isCompany ? "Cuanto pagar por proyecto o por mes" : "Cuanto cobrar por proyecto o por mes"}</h3>
-            <p>{currentPortal.description}</p>
+            <span className="section-tag">{currentHero.tag}</span>
+            <h3>{currentHero.title}</h3>
+            <p>{currentHero.description}</p>
           </div>
 
           <div className="hero-summary">
-            <SummaryCard label="Meta mensual" value={displayAmount(form.monthlyIncomeGoal, displayCurrency, exchangeRate)} />
-            <SummaryCard label="Horas mensuales" value={`${form.monthlyBillableHours} h`} />
-            <SummaryCard label="Contingencia" value={`${form.contingencyPercent}%`} />
+            {heroHighlights.map((item) => (
+              <BannerStat key={item.label} label={item.label} value={item.value} note={item.note} />
+            ))}
           </div>
         </section>
 
-        <section className="workspace-strip">
-          <InfoPill label={isCompany ? "Modo" : "Enfoque"} value={isCompany ? "Contratacion y presupuesto" : "Cotizacion y margen"} />
-          <InfoPill label="Mercado" value={form.market === "INTERNACIONAL" ? "Internacional" : "Local"} />
-          <InfoPill label="Senioridad" value={labelForOption(options.experience, form.experience)} />
-          <InfoPill label="Servicio" value={labelForOption(options.service, form.service)} />
-          <InfoPill label="Moneda visible" value={displayCurrency === "COP" ? `COP · ${exchangeRate}` : "USD"} />
-        </section>
+        {currentView === "workspace" ? (
+          <section className="workspace-strip">
+            <InfoPill label={isCompany ? "Modo" : "Enfoque"} value={isCompany ? "Contratacion y presupuesto" : "Cotizacion y margen"} />
+            <InfoPill label="Mercado" value={form.market === "INTERNACIONAL" ? "Internacional" : "Local"} />
+            <InfoPill label="Senioridad" value={labelForOption(options.experience, form.experience)} />
+            <InfoPill label="Servicio" value={labelForOption(options.service, form.service)} />
+            <InfoPill label="Moneda visible" value="USD" />
+          </section>
+        ) : null}
 
         {currentView === "home" ? (
           <section className="home-grid">
@@ -514,8 +651,8 @@ export default function App() {
               <div className="metric-grid">
                 <Metric
                   label="Moneda visible"
-                  value={displayCurrency === "COP" ? "COP" : "USD"}
-                  note={displayCurrency === "COP" ? `Tasa ${exchangeRate}` : "Base del sistema"}
+                  value="USD"
+                  note="Base del sistema"
                 />
                 <Metric
                   label="Simulaciones guardadas"
@@ -639,22 +776,22 @@ export default function App() {
                     <div className="metric-grid metric-grid-company">
                       <Metric
                         label="Pago por hora"
-                        value={`${displayAmount(result.lowHourlyRate, displayCurrency, exchangeRate)} - ${displayAmount(result.highHourlyRate, displayCurrency, exchangeRate)}`}
+                        value={`${displayAmount(result.lowHourlyRate)} - ${displayAmount(result.highHourlyRate)}`}
                         note="Rango sugerido para contratacion"
                       />
                       <Metric
                         label="Costo empresa"
-                        value={displayAmount(result.estimatedMonthlyCompanyCost, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.estimatedMonthlyCompanyCost)}
                         note="Costo integral aproximado"
                       />
                       <Metric
                         label="Sueldo mensual estimado"
-                        value={displayAmount(result.estimatedMonthlySalary, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.estimatedMonthlySalary)}
                         note="Referencia mensual del perfil"
                       />
                       <Metric
                         label="Presupuesto de proyecto"
-                        value={displayAmount(result.totalRecommendedBudget, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.totalRecommendedBudget)}
                         note={`${result.hours} horas consideradas`}
                       />
                     </div>
@@ -662,12 +799,12 @@ export default function App() {
                     <div className="metric-grid wide metric-grid-company-secondary">
                       <Metric
                         label="Valor recomendado"
-                        value={displayAmount(result.centralHourlyRate, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.centralHourlyRate)}
                         note="Punto central de negociacion"
                       />
                       <Metric
                         label="Reserva sugerida"
-                        value={displayAmount(result.recommendedDepositAmount, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.recommendedDepositAmount)}
                         note={`${result.recommendedDepositPercent}% sugerido`}
                       />
                       <Metric
@@ -682,27 +819,27 @@ export default function App() {
                     <div className="metric-grid">
                       <Metric
                         label="Tarifa por hora"
-                        value={`${displayAmount(result.lowHourlyRate, displayCurrency, exchangeRate)} - ${displayAmount(result.highHourlyRate, displayCurrency, exchangeRate)}`}
+                        value={`${displayAmount(result.lowHourlyRate)} - ${displayAmount(result.highHourlyRate)}`}
                         note="Rango sugerido"
                       />
                       <Metric
                         label="Tarifa recomendada"
-                        value={displayAmount(result.centralHourlyRate, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.centralHourlyRate)}
                         note="Punto central"
                       />
                       <Metric
                         label="Piso sostenible"
-                        value={displayAmount(result.sustainableHourlyFloor, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.sustainableHourlyFloor)}
                         note="Minimo sano por hora"
                       />
                       <Metric
                         label="Proyecto recomendado"
-                        value={displayAmount(result.totalRecommendedBudget, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.totalRecommendedBudget)}
                         note={`${result.hours} horas consideradas`}
                       />
                       <Metric
                         label="Anticipo sugerido"
-                        value={displayAmount(result.recommendedDepositAmount, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.recommendedDepositAmount)}
                         note={`${result.recommendedDepositPercent}% sugerido`}
                       />
                       <Metric
@@ -715,17 +852,17 @@ export default function App() {
                     <div className="metric-grid wide">
                       <Metric
                         label="Sueldo mensual estimado"
-                        value={displayAmount(result.estimatedMonthlySalary, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.estimatedMonthlySalary)}
                         note="Referencia de mensualizacion"
                       />
                       <Metric
                         label="Costo empresa"
-                        value={displayAmount(result.estimatedMonthlyCompanyCost, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.estimatedMonthlyCompanyCost)}
                         note="Costo integral aproximado"
                       />
                       <Metric
                         label="Paquete premium"
-                        value={displayAmount(result.packageBudgets.premium, displayCurrency, exchangeRate)}
+                        value={displayAmount(result.packageBudgets.premium)}
                         note="Mayor cobertura y holgura"
                       />
                     </div>
@@ -756,18 +893,18 @@ export default function App() {
                   <article className="info-block">
                     <span className="mini-label">Escenarios de presupuesto</span>
                     <div className="package-grid">
-                      <PackageCard title="Ajustado" value={result.packageBudgets.base} caption="Entrada competitiva con control estricto del alcance." currency={displayCurrency} exchangeRate={exchangeRate} />
-                      <PackageCard title="Objetivo" value={result.packageBudgets.recommended} caption="Escenario balanceado para contratar sin improvisar." currency={displayCurrency} exchangeRate={exchangeRate} />
-                      <PackageCard title="Expandido" value={result.packageBudgets.premium} caption="Mayor cobertura, prioridad y holgura operativa." currency={displayCurrency} exchangeRate={exchangeRate} />
+                      <PackageCard title="Ajustado" value={result.packageBudgets.base} caption="Entrada competitiva con control estricto del alcance." />
+                      <PackageCard title="Objetivo" value={result.packageBudgets.recommended} caption="Escenario balanceado para contratar sin improvisar." />
+                      <PackageCard title="Expandido" value={result.packageBudgets.premium} caption="Mayor cobertura, prioridad y holgura operativa." />
                     </div>
                   </article>
                 ) : (
                   <article className="info-block">
                     <span className="mini-label">Paquetes de propuesta</span>
                     <div className="package-grid">
-                      <PackageCard title="Base" value={result.packageBudgets.base} caption="Entrada competitiva con alcance controlado." currency={displayCurrency} exchangeRate={exchangeRate} />
-                      <PackageCard title="Recomendado" value={result.packageBudgets.recommended} caption="Balance entre margen, calidad y riesgo." currency={displayCurrency} exchangeRate={exchangeRate} />
-                      <PackageCard title="Premium" value={result.packageBudgets.premium} caption="Mayor cobertura, prioridad y holgura." currency={displayCurrency} exchangeRate={exchangeRate} />
+                      <PackageCard title="Base" value={result.packageBudgets.base} caption="Entrada competitiva con alcance controlado." />
+                      <PackageCard title="Recomendado" value={result.packageBudgets.recommended} caption="Balance entre margen, calidad y riesgo." />
+                      <PackageCard title="Premium" value={result.packageBudgets.premium} caption="Mayor cobertura, prioridad y holgura." />
                     </div>
                   </article>
                 )}
@@ -817,7 +954,7 @@ export default function App() {
                       <p>{formatDateTime(scenario.createdAt)}</p>
                     </div>
                     <span className="history-chip">
-                      {displayAmount(scenario.result.totalRecommendedBudget, displayCurrency, exchangeRate)}
+                      {displayAmount(scenario.result.totalRecommendedBudget)}
                     </span>
                   </div>
                   <p className="history-copy">
@@ -858,52 +995,125 @@ function LoginScreen({
   onSubmit
 }) {
   const currentPortal = portalConfig[portal];
+  const portalNotes = {
+    FREELANCER: "Gestion comercial para profesionales independientes.",
+    EMPRESA: "Gestion de presupuesto y costo integral de contratacion."
+  };
+  const portalMode = portal === "EMPRESA" ? "Presupuesto y contratacion" : "Cotizacion y tarifa";
+  const portalScope =
+    portal === "EMPRESA"
+      ? "Referencia de sueldo, costo empresa y escenarios de contratacion."
+      : "Referencia comercial, tarifa por hora y piso sostenible.";
 
   return (
     <div className={`login-shell ${currentPortal.accentClass}`}>
       <section className="login-panel">
+        <div className="login-masthead">
+          <div className="login-masthead-copy">
+            <span className="mini-label">PMC Quote Studio</span>
+            <strong>Acceso profesional</strong>
+          </div>
+          <div className="login-masthead-meta">
+            <span>Moneda base: USD</span>
+            <span>{portal === "EMPRESA" ? "Portal corporativo" : "Portal independiente"}</span>
+          </div>
+        </div>
+
         <div className="login-copy">
-          <img className="login-logo" src={pricePilotLogo} alt="Price Pilot" />
+          <div className="login-logo-frame">
+            <img className="login-logo" src={pricePilotLogo} alt="Price Pilot" />
+          </div>
           <p className="page-kicker">{currentPortal.eyebrow}</p>
           <h1>{currentPortal.title}</h1>
-          <p>{currentPortal.description}</p>
+          <p className="login-lead">{currentPortal.description}</p>
+
+          <div className="login-info-list">
+            <div className="login-info-row">
+              <span>Modalidad</span>
+              <strong>{portalMode}</strong>
+            </div>
+            <div className="login-info-row">
+              <span>Alcance</span>
+              <p>{portalScope}</p>
+            </div>
+            <div className="login-info-row">
+              <span>Moneda base</span>
+              <strong>USD</strong>
+            </div>
+          </div>
         </div>
 
-        <div className="portal-switch">
-          {Object.entries(portalConfig).map(([key, item]) => (
-            <button
-              key={key}
-              className={`portal-button ${portal === key ? "active" : ""}`}
-              type="button"
-              onClick={() => onPortalSwitch(key)}
-            >
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </div>
+        <div className="login-side">
+          <section className="login-section">
+            <div className="login-section-head">
+              <span className="mini-label">Seleccion de acceso</span>
+              <h2>Perfil de trabajo</h2>
+              <p>Selecciona el entorno segun el tipo de consulta que vas a realizar.</p>
+            </div>
 
-        <form className="login-form" onSubmit={onSubmit}>
-          <label className="field">
-            <span>Correo</span>
-            <input type="email" name="email" value={credentials.email} onChange={onCredentialsChange} />
-          </label>
+            <div className="portal-switch">
+              {Object.entries(portalConfig).map(([key, item]) => (
+                <button
+                  key={key}
+                  className={`portal-button ${portal === key ? "active" : ""}`}
+                  type="button"
+                  onClick={() => onPortalSwitch(key)}
+                >
+                  <div className="portal-button-head">
+                    <strong>{item.label}</strong>
+                    <span>{portal === key ? "Perfil actual" : "Disponible"}</span>
+                  </div>
+                  <small>{portalNotes[key]}</small>
+                </button>
+              ))}
+            </div>
+          </section>
 
-          <label className="field">
-            <span>Contrasena</span>
-            <input type="password" name="password" value={credentials.password} onChange={onCredentialsChange} />
-          </label>
+          <section className="login-section">
+            <div className="login-section-head">
+              <span className="mini-label">Credenciales</span>
+              <h2>Ingreso al sistema</h2>
+              <p>Las cuentas demo quedan precargadas para validar el flujo sin configuracion adicional.</p>
+            </div>
 
-          <button className="primary-button" type="submit" disabled={authLoading}>
-            {authLoading ? "Ingresando..." : `Entrar como ${currentPortal.label}`}
-          </button>
+            <form className="login-form" onSubmit={onSubmit}>
+              <label className="field">
+                <span>Correo</span>
+                <input type="email" name="email" value={credentials.email} onChange={onCredentialsChange} />
+              </label>
 
-          {authError ? <p className="error-banner">{authError}</p> : null}
-        </form>
+              <label className="field">
+                <span>Contrasena</span>
+                <input type="password" name="password" value={credentials.password} onChange={onCredentialsChange} />
+              </label>
 
-        <div className="demo-card">
-          <span className="mini-label">Accesos demo</span>
-          <p>Freelancer: `freelancer@pricepilot.app` / `demo123`</p>
-          <p>Empresa: `empresa@pricepilot.app` / `demo123`</p>
+              <button className="primary-button" type="submit" disabled={authLoading}>
+                {authLoading ? "Ingresando..." : `Entrar como ${currentPortal.label}`}
+              </button>
+
+              {authError ? <p className="error-banner">{authError}</p> : null}
+            </form>
+          </section>
+
+          <div className="demo-card">
+            <span className="mini-label">Credenciales de demostracion</span>
+            <div className="demo-row">
+              <strong>Freelancer</strong>
+              <p>
+                <code>freelancer@pricepilot.app</code>
+                <span> / </span>
+                <code>demo123</code>
+              </p>
+            </div>
+            <div className="demo-row">
+              <strong>Empresa</strong>
+              <p>
+                <code>empresa@pricepilot.app</code>
+                <span> / </span>
+                <code>demo123</code>
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -965,6 +1175,16 @@ function SummaryCard({ label, value }) {
   );
 }
 
+function BannerStat({ label, value, note }) {
+  return (
+    <article className="banner-stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{note}</small>
+    </article>
+  );
+}
+
 function InfoPill({ label, value }) {
   return (
     <div className="info-pill">
@@ -983,34 +1203,39 @@ function FeatureCard({ title, copy }) {
   );
 }
 
-function PackageCard({ title, value, caption, currency, exchangeRate }) {
+function PackageCard({ title, value, caption }) {
   return (
     <div className="package-card">
       <h4>{title}</h4>
-      <strong>{displayAmount(value, currency, exchangeRate)}</strong>
+      <strong>{displayAmount(value)}</strong>
       <p>{caption}</p>
     </div>
   );
 }
 
-function formatCurrency(value, currency = "USD") {
+function formatCurrency(value) {
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
-    currency,
-    maximumFractionDigits: currency === "COP" ? 0 : 2
+    currency: "USD",
+    maximumFractionDigits: 2
   }).format(Number(value || 0));
 }
 
-function convertAmount(value, currency, exchangeRate) {
-  return currency === "COP" ? Number(value || 0) * Number(exchangeRate || 1) : Number(value || 0);
-}
-
-function displayAmount(value, currency, exchangeRate) {
-  return formatCurrency(convertAmount(value, currency, exchangeRate), currency);
+function displayAmount(value) {
+  return formatCurrency(value);
 }
 
 function labelForOption(optionList, value) {
   return optionList.find((option) => option.value === value)?.label ?? value;
+}
+
+function buildInitials(value) {
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 function loadStoredSession() {
@@ -1077,16 +1302,16 @@ function buildScenarioTitle(role, form) {
   return `${mode} ${service.toLowerCase()} ${form.market.toLowerCase()}`;
 }
 
-function buildShareSummary(role, form, result, currency, exchangeRate) {
+function buildShareSummary(role, form, result) {
   const prefix = role === "EMPRESA" ? "Resumen de presupuesto" : "Resumen de cotizacion";
   return [
     prefix,
     `${labelForOption(options.service, form.service)} · ${labelForOption(options.experience, form.experience)} · ${form.market.toLowerCase()}`,
-    `Valor recomendado: ${displayAmount(result.centralHourlyRate, currency, exchangeRate)} por hora`,
-    `Total recomendado: ${displayAmount(result.totalRecommendedBudget, currency, exchangeRate)}`,
+    `Valor recomendado: ${displayAmount(result.centralHourlyRate)} por hora`,
+    `Total recomendado: ${displayAmount(result.totalRecommendedBudget)}`,
     role === "EMPRESA"
-      ? `Costo empresa estimado: ${displayAmount(result.estimatedMonthlyCompanyCost, currency, exchangeRate)}`
-      : `Anticipo sugerido: ${displayAmount(result.recommendedDepositAmount, currency, exchangeRate)}`,
+      ? `Costo empresa estimado: ${displayAmount(result.estimatedMonthlyCompanyCost)}`
+      : `Anticipo sugerido: ${displayAmount(result.recommendedDepositAmount)}`,
     `Riesgo: ${result.riskLevel}`
   ].join("\n");
 }
