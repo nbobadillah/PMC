@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import pricePilotLogo from "./assets/price-pilot-logo.png";
+import pricePilotLogo from "./assets/logo_PP.png";
 
 const API_BASE = "/api";
 const SESSION_KEY = "price-pilot-session";
