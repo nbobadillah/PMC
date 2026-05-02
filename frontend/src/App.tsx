@@ -1,11 +1,15 @@
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
+
 import { LoginScreen } from "./components/auth/LoginScreen";
+import { LandingPage } from "./components/landing/LandingPage";
 import { AppShell } from "./components/layout/AppShell";
+
 import { API_BASE, formTemplates, portalConfig } from "./config/appConfig";
 import { useHashView } from "./hooks/useHashView";
 import { getDashboardCopy } from "./lib/dashboardContent";
 import { buildScenarioTitle, buildShareSummary } from "./lib/scenarioUtils";
+
 import {
   clearStoredSession,
   deleteScenarioHistory,
@@ -14,9 +18,11 @@ import {
   saveScenarioHistory,
   storeSession
 } from "./lib/storage";
+
 import { HistoryView } from "./views/HistoryView";
 import { HomeView } from "./views/HomeView";
 import { WorkspaceView } from "./views/WorkspaceView";
+
 import type {
   ApiMessage,
   Credentials,
@@ -36,15 +42,22 @@ export default function App() {
     email: portalConfig.FREELANCER.demoEmail,
     password: "demo123"
   });
+
   const [session, setSession] = useState<SessionData | null>(() => loadStoredSession());
+
+  const [publicView, setPublicView] = useState<"landing" | "login">("landing");
+
   const [form, setForm] = useState(formTemplates.FREELANCER);
   const [result, setResult] = useState<QuoteResult | null>(null);
   const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
+
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+
   const [error, setError] = useState("");
   const [authError, setAuthError] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
+
   const { currentView, navigateToView } = useHashView();
 
   useEffect(() => {
@@ -82,16 +95,19 @@ export default function App() {
       });
 
       const payload = (await response.json()) as SessionData & ApiMessage;
+
       if (!response.ok) {
         throw new Error(payload.message || "No fue posible iniciar sesion.");
       }
 
       const nextSession = payload as SessionData;
+
       storeSession(nextSession);
       setSession(nextSession);
       setForm(formTemplates[nextSession.role]);
       setSavedScenarios(loadScenarioHistory(nextSession.role));
       setResult(null);
+
       navigateToView("home", { replace: true, smooth: false });
     } catch (loginError) {
       setAuthError(loginError instanceof Error ? loginError.message : "No fue posible iniciar sesion.");
@@ -117,6 +133,9 @@ export default function App() {
     setError("");
     setAuthError("");
     setCopyStatus("");
+
+    setPublicView("landing");
+
     navigateToView("home", { replace: true, smooth: false });
   }
 
@@ -125,10 +144,7 @@ export default function App() {
     setLoading(true);
     setError("");
 
-    if (!session) {
-      setLoading(false);
-      return;
-    }
+    if (!session) return;
 
     try {
       const response = await fetch(`${API_BASE}/quotes`, {
@@ -150,53 +166,52 @@ export default function App() {
       });
 
       const payload = (await response.json()) as QuoteResult & ApiMessage;
+
       if (!response.ok) {
         if (response.status === 401) {
           clearStoredSession();
           setSession(null);
           throw new Error("Tu sesion expiro. Vuelve a iniciar sesion.");
         }
-        throw new Error(payload.message || "No fue posible calcular la recomendacion.");
+
+        throw new Error(payload.message || "No fue posible calcular.");
       }
 
       setResult(payload as QuoteResult);
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "No fue posible calcular la recomendacion.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al calcular.");
     } finally {
       setLoading(false);
     }
   }
 
-  function handleCredentialsChange(event: ChangeEvent<HTMLInputElement>): void {
+  function handleCredentialsChange(event: ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
-    const fieldName = name as keyof Credentials;
 
-    setCredentials((current) => ({
-      ...current,
-      [fieldName]: value
+    setCredentials((prev) => ({
+      ...prev,
+      [name]: value
     }));
   }
 
-  function handleChange(event: FormControlChangeEvent): void {
+  function handleChange(event: FormControlChangeEvent) {
     const { name, value, type } = event.target;
-    const fieldName = name as keyof QuoteForm;
+
     const nextValue =
       type === "checkbox"
         ? (event.target as HTMLInputElement).checked
         : ["hours", "revisions", "overheadPercent", "contingencyPercent", "monthlyIncomeGoal", "monthlyBillableHours"].includes(name)
-          ? Number(value)
-          : value;
+        ? Number(value)
+        : value;
 
-    setForm((current) => ({
-      ...current,
-      [fieldName]: nextValue
+    setForm((prev) => ({
+      ...prev,
+      [name]: nextValue
     }) as QuoteForm);
   }
 
-  function handlePortalSwitch(nextPortal: PortalRole): void {
-    if (session) {
-      return;
-    }
+  function handlePortalSwitch(nextPortal: PortalRole) {
+    if (session) return;
 
     setPortal(nextPortal);
     setCredentials({
@@ -205,57 +220,45 @@ export default function App() {
     });
   }
 
-  function handleReset(): void {
-    if (!session) {
-      return;
-    }
+  function handleReset() {
+    if (!session) return;
 
     setForm(formTemplates[session.role]);
     setResult(null);
     setError("");
   }
 
-  function handleSaveScenario(): void {
-    if (!result || !session) {
-      return;
-    }
+  function handleSaveScenario() {
+    if (!result || !session) return;
 
     const scenario = {
       id: crypto.randomUUID(),
       role: session.role,
       createdAt: new Date().toISOString(),
-      form: {
-        ...form,
-        role: session.role
-      },
+      form: { ...form, role: session.role },
       result,
       title: buildScenarioTitle(session.role, form)
     };
 
-    const nextScenarios = saveScenarioHistory(session.role, scenario);
-    setSavedScenarios(nextScenarios);
+    const next = saveScenarioHistory(session.role, scenario);
+    setSavedScenarios(next);
   }
 
-  function handleLoadScenario(scenario: SavedScenario): void {
-    setForm(scenario.form);
-    setResult(scenario.result);
+  function handleLoadScenario(s: SavedScenario) {
+    setForm(s.form);
+    setResult(s.result);
     setError("");
     navigateToView("workspace");
   }
 
-  function handleDeleteScenario(id: string): void {
-    if (!session) {
-      return;
-    }
+  function handleDeleteScenario(id: string) {
+    if (!session) return;
 
-    const nextScenarios = deleteScenarioHistory(session.role, id);
-    setSavedScenarios(nextScenarios);
+    setSavedScenarios(deleteScenarioHistory(session.role, id));
   }
 
-  function handleStartEstimate(): void {
-    if (!session) {
-      return;
-    }
+  function handleStartEstimate() {
+    if (!session) return;
 
     setResult(null);
     setForm(formTemplates[session.role]);
@@ -263,23 +266,34 @@ export default function App() {
     navigateToView("workspace");
   }
 
-  async function handleCopySummary(): Promise<void> {
-    if (!result || !session) {
-      return;
-    }
+  async function handleCopySummary() {
+    if (!result || !session) return;
 
     const summary = buildShareSummary(session.role, form, result);
+
     try {
       await navigator.clipboard.writeText(summary);
-      setCopyStatus("Resumen copiado");
-      window.setTimeout(() => setCopyStatus(""), 2200);
+      setCopyStatus("Copiado");
+      setTimeout(() => setCopyStatus(""), 2000);
     } catch {
-      setCopyStatus("No se pudo copiar");
-      window.setTimeout(() => setCopyStatus(""), 2200);
+      setCopyStatus("Error");
     }
   }
 
+  // 🔥 NUEVO FLUJO
   if (!session) {
+    if (publicView === "landing") {
+      return (
+        <LandingPage
+          onStart={() => setPublicView("login")}
+          onChoosePortal={(p) => {
+            handlePortalSwitch(p);
+            setPublicView("login");
+          }}
+        />
+      );
+    }
+
     return (
       <LoginScreen
         portal={portal}
@@ -289,17 +303,20 @@ export default function App() {
         onPortalSwitch={handlePortalSwitch}
         onCredentialsChange={handleCredentialsChange}
         onSubmit={handleLogin}
+        onBack={() => setPublicView("landing")}
       />
     );
   }
 
   const currentPortal = portalConfig[session.role];
   const isCompany = session.role === "EMPRESA";
+
   const preview: PreviewData = {
     monthlyFloor:
       Math.round((Number(form.monthlyIncomeGoal) / Number(form.monthlyBillableHours || 1)) * 100) / 100,
     urgencyLabel: form.rushDelivery ? "Urgente" : "Normal"
   };
+
   const dashboardCopy = getDashboardCopy({
     currentView,
     form,
@@ -364,7 +381,7 @@ export default function App() {
           isCompany={isCompany}
           session={session}
           preview={preview}
-          marketContextLabel={form.market === "INTERNACIONAL" ? "Mercado internacional" : "Mercado local"}
+          marketContextLabel={form.market === "INTERNACIONAL" ? "Internacional" : "Local"}
           onNavigate={navigateToView}
           onLogout={handleLogout}
         >
