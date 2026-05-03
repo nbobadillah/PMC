@@ -2207,3 +2207,88 @@ html {
   margin-left: auto;
   margin-right: auto;
 }
+
+/* =========================
+   MOBILE OPTIMIZATION
+========================= */
+
+@media (max-width: 768px) {
+
+  .landing-shell {
+    padding: 16px 12px 28px;
+  }
+
+  .landing-navbar {
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+
+  .landing-nav {
+    display: none;
+  }
+
+  .startup-hero-copy {
+    padding: 24px;
+  }
+
+  .startup-hero-clean h1 {
+    font-size: clamp(2.4rem, 12vw, 3.2rem);
+    line-height: 1;
+  }
+
+  .startup-hero-copy p {
+    font-size: 1rem;
+  }
+
+  .landing-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .landing-actions button,
+  .landing-actions a {
+    width: 100%;
+  }
+
+  .startup-trust-row {
+    flex-direction: column;
+  }
+
+  .startup-trust-row span {
+    width: 100%;
+    text-align: center;
+  }
+
+  .startup-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .startup-before-after {
+    grid-template-columns: 1fr;
+  }
+
+  .startup-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .startup-pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-cta {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .landing-cta .primary-button {
+    width: 100%;
+  }
+}
